@@ -1,7 +1,7 @@
 # iPad fridge-kiosk setup
 
 1. Run the hub on a machine that stays on your Wi‑Fi:
-   `cd homehub && uv sync && uv run homehub`
+   `uv sync && uv run homehub`
 2. On the iPad, open Safari to `http://<that-machine-lan-ip>:8787`.
 3. Share → Add to Home Screen.
 4. Open the Home Hub icon (standalone). Allow camera when prompted.
