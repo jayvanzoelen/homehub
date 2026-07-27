@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#1a2420" />
+  <link rel="manifest" href="/static/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+  <link rel="stylesheet" href="/static/css/hub.css" />
+  <title>{% block title %}{{ cfg.household.name }} Hub{% endblock %}</title>
+</head>
+<body class="tab-{{ tab }}">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <div>
+        <p class="brand-name">{{ cfg.household.name }} Hub</p>
+        <p class="brand-sub" id="clock">—</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <form class="person-switch" method="post" action="/api/active-person">
+        <label class="sr-only" for="person">Who’s using</label>
+        <select id="person" name="person_id" onchange="this.form.submit()">
+          <option value="" disabled {% if not active_person %}selected{% endif %}>Who’s home?</option>
+          {% for p in people %}
+          <option value="{{ p.id }}" {% if active_person and active_person.id == p.id %}selected{% endif %}>
+            {{ p.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </form>
+      <a class="armed-pill {% if state.armed %}is-armed{% endif %}" href="/security">
+        {% if state.armed %}Armed{% else %}Home{% endif %}
+      </a>
+    </div>
+  </header>
+
+  <main class="stage">
+    {% block content %}{% endblock %}
+  </main>
+
+  <nav class="dock" aria-label="Primary">
+    <a href="/" class="{% if tab == 'home' %}active{% endif %}">Home</a>
+    <a href="/tasks" class="{% if tab == 'tasks' %}active{% endif %}">Board</a>
+    <a href="/pantry" class="{% if tab == 'pantry' %}active{% endif %}">Pantry</a>
+    <a href="/scan" class="{% if tab == 'scan' %}active{% endif %}">Scan</a>
+    <a href="/security" class="{% if tab == 'security' %}active{% endif %}">Guard</a>
+  </nav>
+
+  <script src="/static/js/hub.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,26 @@
+[server]
+host = "0.0.0.0"
+port = 8787
+
+[household]
+name = "Home"
+# Shared PIN to arm/disarm security and switch out of kiosk confirmations.
+# Leave empty to disable PIN checks (ok for trusted LAN only).
+pin = ""
+
+[vision]
+# When true and ANTHROPIC_API_KEY is set, Scan can suggest an item name.
+enabled = false
+model = "claude-haiku-4-5"
+
+[security]
+# Client-side motion sensitivity 0–100 (higher = more triggers).
+motion_threshold = 28
+# Minimum seconds between stored motion events.
+cooldown_seconds = 8
+# Max retained motion snapshots.
+max_events = 200
+
+[media]
+# Relative to the homehub/ directory.
+root = "data/media"

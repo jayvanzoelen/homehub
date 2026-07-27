@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <div class="panel-head">
+    <h1>Pantry</h1>
+    <div class="segmented">
+      <a href="/pantry" class="{% if location == 'all' %}active{% endif %}">All</a>
+      {% for loc in locations %}
+      <a href="/pantry?location={{ loc.value }}" class="{% if location == loc.value %}active{% endif %}">{{ loc.value }}</a>
+      {% endfor %}
+    </div>
+  </div>
+  <a class="big-btn" href="/scan">Scan with camera</a>
+</section>
+
+<section class="panel">
+  {% if items %}
+  <ul class="inventory-list">
+    {% for item in items %}
+    <li>
+      {% if item.photo_path %}
+      <img src="/media/{{ item.photo_path }}" alt="" class="thumb" />
+      {% else %}
+      <div class="thumb placeholder" aria-hidden="true"></div>
+      {% endif %}
+      <div class="grow">
+        <p class="task-title">{{ item.name }}</p>
+        <p class="meta">{{ item.location.value }}{% if item.expires_on %} · exp {{ item.expires_on.isoformat() }}{% endif %}</p>
+      </div>
+      <div class="qty">
+        <form method="post" action="/pantry/{{ item.id }}/adjust">
+          <input type="hidden" name="delta" value="-1" />
+          <button type="submit" aria-label="Decrease">−</button>
+        </form>
+        <span>{{ item.quantity | int if item.quantity == item.quantity|int else item.quantity }} {{ item.unit }}</span>
+        <form method="post" action="/pantry/{{ item.id }}/adjust">
+          <input type="hidden" name="delta" value="1" />
+          <button type="submit" aria-label="Increase">+</button>
+        </form>
+      </div>
+      <form method="post" action="/pantry/{{ item.id }}/delete" onsubmit="return confirm('Remove {{ item.name }}?');">
+        <button type="submit" class="text-btn">Remove</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">Nothing here. Scan the first item.</p>
+  {% endif %}
+</section>
+{% endblock %}

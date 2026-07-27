@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <div class="panel-head">
+    <h1>Board</h1>
+    <div class="segmented">
+      <a href="/tasks" class="{% if show != 'all' %}active{% endif %}">Open</a>
+      <a href="/tasks?show=all" class="{% if show == 'all' %}active{% endif %}">All</a>
+    </div>
+  </div>
+
+  <form class="stack-form" method="post" action="/tasks">
+    <label>
+      New task
+      <input name="title" type="text" placeholder="Take out recycling" required maxlength="200" />
+    </label>
+    <div class="row">
+      <label>
+        Assignee
+        <select name="assignee_id">
+          <option value="">Anyone</option>
+          {% for p in people %}
+          <option value="{{ p.id }}" {% if active_person and active_person.id == p.id %}selected{% endif %}>{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        Cadence
+        <select name="cadence">
+          <option value="once">Once</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+        </select>
+      </label>
+      <label>
+        Due
+        <input name="due_date" type="date" />
+      </label>
+    </div>
+    <button type="submit" class="big-btn">Add to board</button>
+  </form>
+</section>
+
+<section class="panel">
+  {% if tasks %}
+  <ul class="task-list roomy">
+    {% for task in tasks %}
+    <li class="{% if task.done_at %}done{% endif %}">
+      {% if task.done_at %}
+      <form method="post" action="/tasks/{{ task.id }}/reopen">
+        <button type="submit" class="check is-done" aria-label="Reopen {{ task.title }}"></button>
+      </form>
+      {% else %}
+      <form method="post" action="/tasks/{{ task.id }}/complete">
+        <button type="submit" class="check" aria-label="Complete {{ task.title }}"></button>
+      </form>
+      {% endif %}
+      <div>
+        <p class="task-title">{{ task.title }}</p>
+        <p class="meta">
+          {% set assignee = people_by_id.get(task.assignee_id) %}
+          {% if assignee %}{{ assignee.name }} · {% endif %}
+          {{ task.cadence.value }}
+          {% if task.due_date %} · due {{ task.due_date.isoformat() }}{% endif %}
+          {% if task.done_at %} · done {{ task.done_at.strftime('%b %d %H:%M') }}{% endif %}
+        </p>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">No tasks yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

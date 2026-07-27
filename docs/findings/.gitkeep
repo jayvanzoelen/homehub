@@ -1,0 +1,2 @@
+# Keep Home Hub media and SQLite out of git (local runtime data).
+homehub/data/

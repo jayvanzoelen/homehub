@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero-panel">
+  <div>
+    <h1>{% if active_person %}Hey {{ active_person.name }}{% else %}Kitchen HQ{% endif %}</h1>
+    <p class="lede">
+      {% if state.armed %}
+        Guard is on. Motion will be logged from the front camera.
+      {% else %}
+        Tap the board for chores, or Scan to drop groceries into the pantry.
+      {% endif %}
+    </p>
+  </div>
+  <div class="quick-actions">
+    <a class="big-btn" href="/scan">Scan item</a>
+    <a class="big-btn ghost" href="/tasks">Open board</a>
+  </div>
+</section>
+
+<section class="grid-2">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Open tasks</h2>
+      <a href="/tasks">All</a>
+    </div>
+    {% if open_tasks %}
+    <ul class="task-list">
+      {% for task in open_tasks[:6] %}
+      <li>
+        <form method="post" action="/tasks/{{ task.id }}/complete">
+          <button type="submit" class="check" aria-label="Complete {{ task.title }}"></button>
+        </form>
+        <div>
+          <p class="task-title">{{ task.title }}</p>
+          <p class="meta">
+            {% if task.due_date %}Due {{ task.due_date.isoformat() }} · {% endif %}
+            {{ task.cadence.value }}
+          </p>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty">Nothing open. Nice.</p>
+    {% endif %}
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Recent pantry</h2>
+      <a href="/pantry">All</a>
+    </div>
+    {% if recent_items %}
+    <ul class="plain-list">
+      {% for item in recent_items %}
+      <li>
+        <span>{{ item.name }}</span>
+        <span class="meta">{{ item.quantity | int if item.quantity == item.quantity|int else item.quantity }} {{ item.unit }} · {{ item.location.value }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty">Pantry is empty — use Scan.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Housemates</h2>
+  </div>
+  <div class="people-row">
+    {% for p in people %}
+    <form method="post" action="/api/active-person">
+      <input type="hidden" name="person_id" value="{{ p.id }}" />
+      <button type="submit" class="avatar" style="--avatar: {{ p.color }}" {% if active_person and active_person.id == p.id %}aria-current="true"{% endif %}>
+        {{ p.initials }}
+        <span>{{ p.name }}</span>
+      </button>
+    </form>
+    {% endfor %}
+  </div>
+  <form class="inline-form" method="post" action="/people">
+    <input name="name" type="text" placeholder="Add housemate" required maxlength="64" />
+    <input name="color" type="color" value="#5a6b3d" aria-label="Color" />
+    <button type="submit">Add</button>
+  </form>
+</section>
+{% endblock %}

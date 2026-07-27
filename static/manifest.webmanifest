@@ -1,0 +1,22 @@
+{
+  "name": "Home Hub",
+  "short_name": "Home Hub",
+  "description": "Fridge hub for chores, pantry, and security",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#14201b",
+  "theme_color": "#1a2420",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

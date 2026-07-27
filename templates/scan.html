@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="scan-layout">
+  <div class="camera-shell panel">
+    <video id="scan-video" playsinline autoplay muted></video>
+    <canvas id="scan-canvas" class="hidden"></canvas>
+    <p id="camera-status" class="meta camera-status">Starting front camera…</p>
+    <div class="camera-actions">
+      <button type="button" id="capture-btn" class="big-btn" disabled>Capture</button>
+      <button type="button" id="flip-btn" class="big-btn ghost" disabled>Flip camera</button>
+    </div>
+  </div>
+
+  <form id="scan-form" class="panel stack-form">
+    <h1>Confirm item</h1>
+    <img id="preview" class="preview hidden" alt="Capture preview" />
+    <label>
+      Name
+      <input id="item-name" name="name" type="text" placeholder="Milk" maxlength="120" />
+    </label>
+    <div class="row">
+      <label>
+        Qty
+        <input id="item-qty" name="quantity" type="number" min="0" step="0.5" value="1" />
+      </label>
+      <label>
+        Unit
+        <input id="item-unit" name="unit" type="text" value="ea" maxlength="24" />
+      </label>
+      <label>
+        Where
+        <select id="item-location" name="location">
+          {% for loc in locations %}
+          <option value="{{ loc.value }}" {% if loc.value == 'fridge' %}selected{% endif %}>{{ loc.value }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <label>
+      Expires (optional)
+      <input id="item-expires" name="expires_on" type="date" />
+    </label>
+    <label class="check-row">
+      <input id="suggest" type="checkbox" {% if vision_enabled %}checked{% endif %} {% if not vision_enabled %}disabled{% endif %} />
+      Suggest name with vision{% if not vision_enabled %} (enable in config){% endif %}
+    </label>
+    <button type="submit" id="save-btn" class="big-btn" disabled>Save to pantry</button>
+    <p id="scan-msg" class="meta" role="status"></p>
+  </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/camera.js"></script>
+{% endblock %}

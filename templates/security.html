@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="scan-layout">
+  <div class="camera-shell panel">
+    <video id="guard-video" playsinline autoplay muted></video>
+    <canvas id="guard-canvas" class="hidden"></canvas>
+    <canvas id="diff-canvas" class="hidden"></canvas>
+    <p id="guard-status" class="meta camera-status">
+      {% if state.armed %}Armed — watching for motion{% else %}Disarmed — preview only{% endif %}
+    </p>
+    <div class="camera-actions">
+      <button type="button" id="arm-btn" class="big-btn {% if state.armed %}danger{% endif %}">
+        {% if state.armed %}Disarm{% else %}Arm guard{% endif %}
+      </button>
+    </div>
+    {% if cfg.household.pin %}
+    <label class="pin-field">
+      PIN
+      <input id="security-pin" type="password" inputmode="numeric" maxlength="12" autocomplete="off" />
+    </label>
+    {% endif %}
+  </div>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h1>Recent events</h1>
+    </div>
+    {% if events %}
+    <ul class="event-list" id="event-list">
+      {% for event in events %}
+      <li>
+        {% if event.snapshot_path %}
+        <img src="/media/{{ event.snapshot_path }}" alt="" class="thumb" />
+        {% else %}
+        <div class="thumb placeholder" aria-hidden="true"></div>
+        {% endif %}
+        <div>
+          <p class="task-title">{{ event.kind.value }}</p>
+          <p class="meta">{{ event.created_at.strftime('%b %d %H:%M:%S') }}{% if event.note %} · {{ event.note }}{% endif %}</p>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty">No events yet.</p>
+    {% endif %}
+  </section>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.HOMEHUB_SECURITY = {
+    armed: {{ 'true' if state.armed else 'false' }},
+    motionThreshold: {{ cfg.security.motion_threshold }},
+    cooldownSeconds: {{ cfg.security.cooldown_seconds }}
+  };
+</script>
+<script src="/static/js/security.js"></script>
+{% endblock %}
