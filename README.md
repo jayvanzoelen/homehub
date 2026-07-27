@@ -5,16 +5,12 @@ via the selfie camera, and a simple motion-aware security mode.
 
 See [PRODUCT.md](./PRODUCT.md) for the full product constitution.
 
-> **Note:** This project was bootstrapped inside the Terrarium workspace because
-> that was the only attached repo. It is a standalone app under `homehub/` and
-> should be moved to its own repository before merging anything into Terrarium.
-
 ## Quick start
 
 ```bash
-cd homehub
 uv sync
 uv run homehub
+# or: pip install -e ".[dev]" && homehub
 ```
 
 Open `http://<lan-ip>:8787` on the iPad Safari → Share → **Add to Home Screen**.
@@ -39,10 +35,11 @@ item names from the scan photo. Manual naming always works.
 - Dim the screen at night via iOS Night Shift / brightness; the hub has a calm idle clock.
 - iOS 12+ is enough for camera + basic PWA install.
 
+Full fridge-kiosk steps: [docs/IPAD_SETUP.md](./docs/IPAD_SETUP.md).
+
 ## Development
 
 ```bash
-cd homehub
 uv run pytest
 uv run ruff check .
 ```
@@ -50,7 +47,6 @@ uv run ruff check .
 ## Layout
 
 ```
-homehub/
 ├── PRODUCT.md          # product constitution
 ├── config.toml
 ├── pyproject.toml

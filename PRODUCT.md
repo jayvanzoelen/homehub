@@ -100,4 +100,3 @@ and a simple security eye. Local-first. Touch-first. Readable from across the ki
 3. Recurring task fairness (“who did trash last?”)
 4. Low-stock shopping list shared to phones
 5. Face-or-PIN person switching that’s harder to spoof
-6. Split into its own GitHub repo (this tree currently lives under `homehub/` beside Terrarium only as a bootstrap)
