@@ -38,7 +38,7 @@
           <button type="submit" aria-label="Increase">+</button>
         </form>
       </div>
-      <form method="post" action="/pantry/{{ item.id }}/delete" onsubmit="return confirm('Remove {{ item.name }}?');">
+      <form method="post" action="/pantry/{{ item.id }}/delete" data-confirm="Remove {{ item.name }}?">
         <button type="submit" class="text-btn">Remove</button>
       </form>
     </li>

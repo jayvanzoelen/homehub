@@ -39,6 +39,12 @@ def _utcnow() -> datetime:
     return datetime.now(UTC).replace(tzinfo=None)
 
 
+def _iso_utc(value: datetime) -> str:
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=UTC)
+    return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
+
+
 def create_app() -> FastAPI:
     cfg = get_config()
 
@@ -79,7 +85,7 @@ def create_app() -> FastAPI:
         state = _hub_state(session)
         people = _people(session)
         open_tasks = session.exec(
-            select(Task).where(col(Task.done_at).is_(None)).order_by(Task.created_at)
+            select(Task).where(col(Task.done_at).is_(None)).order_by(col(Task.created_at))
         ).all()
         items = session.exec(
             select(InventoryItem).order_by(col(InventoryItem.updated_at).desc()).limit(8)
@@ -246,7 +252,7 @@ def create_app() -> FastAPI:
         location: Annotated[str, Form()] = "pantry",
         expires_on: Annotated[str | None, Form()] = None,
         suggest: Annotated[str, Form()] = "false",
-    ) -> dict:
+    ) -> dict[str, object]:
         state = _hub_state(session)
         suffix = Path(photo.filename or "capture.jpg").suffix.lower() or ".jpg"
         if suffix not in {".jpg", ".jpeg", ".png", ".webp"}:
@@ -258,12 +264,12 @@ def create_app() -> FastAPI:
 
         want_suggest = suggest.strip().lower() in {"1", "true", "yes", "on"}
         suggested: str | None = None
-        if want_suggest or not name.strip():
+        if want_suggest:
             suggested = await suggest_item_name(dest)
 
-        final_name = name.strip() or (suggested or "")
+        final_name = name.strip()
         if not final_name:
-            # Keep the photo for a follow-up name confirmation in the UI.
+            # Keep the photo for explicit follow-up confirmation in the UI.
             return {
                 "ok": False,
                 "needs_name": True,
@@ -305,7 +311,7 @@ def create_app() -> FastAPI:
         unit: Annotated[str, Form()] = "ea",
         location: Annotated[str, Form()] = "pantry",
         expires_on: Annotated[str | None, Form()] = None,
-    ) -> dict:
+    ) -> dict[str, object]:
         state = _hub_state(session)
         name = name.strip()
         if not name:
@@ -392,7 +398,7 @@ def create_app() -> FastAPI:
         session: Annotated[Session, Depends(get_session)],
         pin: Annotated[str, Form()] = "",
         armed: Annotated[str, Form()] = "true",
-    ) -> dict:
+    ) -> dict[str, object]:
         _check_pin(pin or None)
         is_armed = armed.strip().lower() in {"1", "true", "yes", "on"}
         state = _hub_state(session)
@@ -411,7 +417,7 @@ def create_app() -> FastAPI:
         session: Annotated[Session, Depends(get_session)],
         photo: UploadFile = File(...),
         note: Annotated[str, Form()] = "Motion detected",
-    ) -> dict:
+    ) -> dict[str, object]:
         state = _hub_state(session)
         if not state.armed:
             return {"ok": False, "ignored": True, "reason": "not_armed"}
@@ -460,8 +466,31 @@ def create_app() -> FastAPI:
 
         return {"ok": True, "event_id": event.id, "snapshot_path": event.snapshot_path}
 
+    @app.get("/api/security/events")
+    def security_events(
+        session: Annotated[Session, Depends(get_session)],
+        limit: int = Query(default=40, ge=1, le=100),
+    ) -> dict[str, object]:
+        events = session.exec(
+            select(SecurityEvent).order_by(col(SecurityEvent.created_at).desc()).limit(limit)
+        ).all()
+        return {
+            "events": [
+                {
+                    "id": event.id,
+                    "kind": event.kind.value,
+                    "note": event.note or event.kind.value.capitalize(),
+                    "created_at": _iso_utc(event.created_at),
+                    "snapshot_url": (
+                        f"/media/{event.snapshot_path}" if event.snapshot_path else None
+                    ),
+                }
+                for event in events
+            ]
+        }
+
     @app.get("/api/status")
-    def status(session: Annotated[Session, Depends(get_session)]) -> dict:
+    def status(session: Annotated[Session, Depends(get_session)]) -> dict[str, object]:
         state = _hub_state(session)
         return {
             "household": get_config().household.name,
