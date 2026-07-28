@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 from pathlib import Path
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -106,6 +107,35 @@ def test_scan_saves_inventory_item(client: TestClient) -> None:
         assert item.quantity == 2
 
 
+def test_scan_suggestion_requires_confirmation(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    jpeg = bytes.fromhex(
+        "ffd8ffe000104a46494600010100000100010000ffdb004300080606070605080707"
+        "070909080a0c140d0c0b0b0c1912130f141d1a1f1e1d1a1c1c20242e2720222c231c"
+        "1c2837292c30313434341f27393d38323c2e333432ffdb0043010909090c0b0c180d"
+        "0d1832211c2132323232323232323232323232323232323232323232323232323232"
+        "323232323232323232323232323232323232323232ffc00011080001000103011100"
+        "0211031101ffc40014000100000000000000000000000000000008ffc40014100100"
+        "00000000000000000000000000000000ffda000c0301000210031000003f00bf80ffd9"
+    )
+    suggest = AsyncMock(return_value="Oat milk")
+    monkeypatch.setattr("homehub.app.suggest_item_name", suggest)
+
+    res = client.post(
+        "/api/scan",
+        data={"name": "", "suggest": "true"},
+        files={"photo": ("capture.jpg", io.BytesIO(jpeg), "image/jpeg")},
+    )
+
+    assert res.status_code == 200
+    assert res.json()["needs_name"] is True
+    assert res.json()["suggested_name"] == "Oat milk"
+    suggest.assert_awaited_once()
+    with Session(dbmod.engine) as session:
+        assert session.exec(select(InventoryItem)).first() is None
+
+
 def test_security_arm_and_motion(client: TestClient) -> None:
     res = client.post("/api/security/arm", data={"armed": "true"})
     assert res.status_code == 200
@@ -145,6 +175,35 @@ def test_motion_ignored_when_disarmed(client: TestClient) -> None:
     )
     assert res.status_code == 200
     assert res.json()["ignored"] is True
+
+
+def test_security_events_endpoint_returns_native_client_payload(client: TestClient) -> None:
+    res = client.post("/api/security/arm", data={"armed": "true"})
+    assert res.status_code == 200
+
+    jpeg = bytes.fromhex(
+        "ffd8ffe000104a46494600010100000100010000ffdb004300080606070605080707"
+        "070909080a0c140d0c0b0b0c1912130f141d1a1f1e1d1a1c1c20242e2720222c231c"
+        "1c2837292c30313434341f27393d38323c2e333432ffdb0043010909090c0b0c180d"
+        "0d1832211c2132323232323232323232323232323232323232323232323232323232"
+        "323232323232323232323232323232323232323232ffc00011080001000103011100"
+        "0211031101ffc40014000100000000000000000000000000000008ffc40014100100"
+        "00000000000000000000000000000000ffda000c0301000210031000003f00bf80ffd9"
+    )
+    res = client.post(
+        "/api/security/motion",
+        data={"note": "native motion"},
+        files={"photo": ("motion.jpg", io.BytesIO(jpeg), "image/jpeg")},
+    )
+    assert res.status_code == 200
+
+    res = client.get("/api/security/events?limit=1")
+    assert res.status_code == 200
+    event = res.json()["events"][0]
+    assert event["kind"] == "motion"
+    assert event["note"] == "native motion"
+    assert event["created_at"].endswith("Z")
+    assert event["snapshot_url"].startswith("/media/security/")
 
 
 def test_status_endpoint(client: TestClient) -> None:

@@ -39,6 +39,12 @@ def _utcnow() -> datetime:
     return datetime.now(UTC).replace(tzinfo=None)
 
 
+def _iso_utc(value: datetime) -> str:
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=UTC)
+    return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
+
+
 def create_app() -> FastAPI:
     cfg = get_config()
 
@@ -258,12 +264,12 @@ def create_app() -> FastAPI:
 
         want_suggest = suggest.strip().lower() in {"1", "true", "yes", "on"}
         suggested: str | None = None
-        if want_suggest or not name.strip():
+        if want_suggest:
             suggested = await suggest_item_name(dest)
 
-        final_name = name.strip() or (suggested or "")
+        final_name = name.strip()
         if not final_name:
-            # Keep the photo for a follow-up name confirmation in the UI.
+            # Keep the photo for explicit follow-up confirmation in the UI.
             return {
                 "ok": False,
                 "needs_name": True,
@@ -459,6 +465,29 @@ def create_app() -> FastAPI:
         session.commit()
 
         return {"ok": True, "event_id": event.id, "snapshot_path": event.snapshot_path}
+
+    @app.get("/api/security/events")
+    def security_events(
+        session: Annotated[Session, Depends(get_session)],
+        limit: int = Query(default=40, ge=1, le=100),
+    ) -> dict:
+        events = session.exec(
+            select(SecurityEvent).order_by(col(SecurityEvent.created_at).desc()).limit(limit)
+        ).all()
+        return {
+            "events": [
+                {
+                    "id": event.id,
+                    "kind": event.kind.value,
+                    "note": event.note or event.kind.value.capitalize(),
+                    "created_at": _iso_utc(event.created_at),
+                    "snapshot_url": (
+                        f"/media/{event.snapshot_path}" if event.snapshot_path else None
+                    ),
+                }
+                for event in events
+            ]
+        }
 
     @app.get("/api/status")
     def status(session: Annotated[Session, Depends(get_session)]) -> dict:

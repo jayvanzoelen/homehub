@@ -13,15 +13,19 @@ and a simple security eye. Local-first. Touch-first. Readable from across the ki
 
 - Not a full smart-home controller (no Matter/Zigbee/HomeKit bridge yet).
 - Not a cloud SaaS. Runs on your LAN. Optional LLM vision calls only.
-- Not a native App Store app. Old iPads age out of iOS; a PWA in Guided Access wins.
+- Not a standalone offline app. Both clients use the local Home Hub server as
+  the source of truth.
 - Not multi-home / multi-tenancy.
 
-## Why a PWA on the fridge iPad
+## Why two iPad clients
 
 - Old iPads often cap at iOS 12–15; modern native apps won’t install.
 - Front (selfie) camera faces the kitchen when the iPad is fridge-mounted — correct for both scanning groceries and watching the room.
 - “Add to Home Screen” + Guided Access = always-on kiosk without an Apple Developer account.
 - One LAN URL works for phones too (add items from the shop).
+- A native iPadOS 15 client supports the 6th-generation iPad and provides camera
+  access when the local server uses HTTP; WebKit camera APIs require trusted
+  HTTPS.
 
 ## Hardware assumptions
 
@@ -74,6 +78,7 @@ and a simple security eye. Local-first. Touch-first. Readable from across the ki
 - **Backend**: Python 3.11+, FastAPI, SQLite via SQLModel
 - **UI**: server-rendered HTML + HTMX + small vanilla JS (old Safari friendly)
 - **PWA**: web manifest + service worker for installability / light offline shell
+- **Native iPad**: SwiftUI + WKWebView + AVFoundation, targeting iPadOS 15–17
 - **Vision** (optional): Anthropic vision when `ANTHROPIC_API_KEY` is set; else manual label
 - **Motion**: client-side frame diff on the iPad; POST snapshot on trigger
 - **Package manager**: `uv`
@@ -89,6 +94,7 @@ and a simple security eye. Local-first. Touch-first. Readable from across the ki
 ## Success criteria for v1
 
 - iPad can run as a Home Screen web app and survive a Safari refresh.
+- Native client can connect to the LAN server and use Scan and Guard over HTTP.
 - Three housemates can claim and complete tasks without accounts.
 - An item can be added via selfie camera in under ~15 seconds (with manual name OK).
 - Arming security and walking in front of the camera creates a visible event with a still.
