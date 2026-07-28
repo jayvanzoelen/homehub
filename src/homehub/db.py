@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 
+from sqlalchemy.engine import Engine
 from sqlmodel import Session, SQLModel, create_engine, select
 
 from homehub.config import ROOT, get_config
@@ -20,7 +21,7 @@ def _ensure_dirs() -> None:
     (get_config().media_path / "security").mkdir(parents=True, exist_ok=True)
 
 
-def get_engine():
+def get_engine() -> Engine:
     _ensure_dirs()
     return create_engine(
         f"sqlite:///{DB_PATH}",
