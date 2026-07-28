@@ -470,7 +470,7 @@ def create_app() -> FastAPI:
     def security_events(
         session: Annotated[Session, Depends(get_session)],
         limit: int = Query(default=40, ge=1, le=100),
-    ) -> dict:
+    ) -> dict[str, object]:
         events = session.exec(
             select(SecurityEvent).order_by(col(SecurityEvent.created_at).desc()).limit(limit)
         ).all()

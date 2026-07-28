@@ -27,9 +27,37 @@ final class ScanCameraController: NSObject, ObservableObject {
         position == .front
     }
 
+    override init() {
+        super.init()
+        let center = NotificationCenter.default
+        center.addObserver(
+            self,
+            selector: #selector(sessionWasInterrupted),
+            name: AVCaptureSession.wasInterruptedNotification,
+            object: session
+        )
+        center.addObserver(
+            self,
+            selector: #selector(sessionInterruptionEnded),
+            name: AVCaptureSession.interruptionEndedNotification,
+            object: session
+        )
+        center.addObserver(
+            self,
+            selector: #selector(sessionRuntimeError),
+            name: AVCaptureSession.runtimeErrorNotification,
+            object: session
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
     func start() {
         DispatchQueue.main.async {
             self.permissionDenied = false
+            self.errorMessage = nil
         }
         sessionQueue.async {
             self.wantsToRun = true
@@ -167,6 +195,7 @@ final class ScanCameraController: NSObject, ObservableObject {
             self.session.startRunning()
             DispatchQueue.main.async {
                 self.isRunning = true
+                self.errorMessage = nil
             }
         }
     }
@@ -211,6 +240,29 @@ final class ScanCameraController: NSObject, ObservableObject {
     private func publishError(_ message: String) {
         DispatchQueue.main.async {
             self.errorMessage = message
+        }
+    }
+
+    @objc private func sessionWasInterrupted(_ notification: Notification) {
+        DispatchQueue.main.async {
+            self.isRunning = false
+            self.errorMessage = "The camera was interrupted. Tap Retry when it is available."
+        }
+    }
+
+    @objc private func sessionInterruptionEnded(_ notification: Notification) {
+        configureAndStart()
+    }
+
+    @objc private func sessionRuntimeError(_ notification: Notification) {
+        let error = notification.userInfo?[AVCaptureSessionErrorKey] as? NSError
+        DispatchQueue.main.async {
+            self.isRunning = false
+        }
+        if error?.code == AVError.Code.mediaServicesWereReset.rawValue {
+            configureAndStart()
+        } else {
+            publishError(error?.localizedDescription ?? "The camera stopped unexpectedly.")
         }
     }
 }

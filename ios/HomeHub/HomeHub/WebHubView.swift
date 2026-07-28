@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import UIKit
 import WebKit
@@ -57,6 +58,12 @@ struct WebHubScreen: View {
         }
         .onChange(of: router.selectedTab) { selectedTab in
             if selectedTab == tab {
+                errorMessage = nil
+                reloadToken += 1
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .homeHubDataDidChange)) { _ in
+            if router.selectedTab == tab {
                 errorMessage = nil
                 reloadToken += 1
             }

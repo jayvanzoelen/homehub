@@ -43,7 +43,8 @@ Apple Developer account or managed-device deployment.
 ## Important behavior
 
 - Guard detects motion only while the Guard tab is visible and the app is in
-  the foreground. iPadOS does not permit continuous background camera capture.
+  the foreground. It disarms automatically when monitoring stops because
+  iPadOS does not permit continuous background camera capture.
 - The app prevents Auto-Lock while it is in the foreground. Guided Access is
   still recommended.
 - Plain HTTP is allowed only to support a trusted local Home Hub server. Do not

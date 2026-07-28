@@ -28,11 +28,15 @@ struct ScanView: View {
             Group {
                 if geometry.size.width >= 850 {
                     HStack(alignment: .top, spacing: 24) {
-                        cameraPanel
-                            .frame(maxWidth: .infinity)
+                        ScrollView {
+                            cameraPanel
+                        }
+                        .frame(maxWidth: .infinity)
                         if camera.capturedImage != nil {
-                            detailsForm
-                                .frame(width: min(390, geometry.size.width * 0.42))
+                            ScrollView {
+                                detailsForm
+                            }
+                            .frame(width: min(390, geometry.size.width * 0.42))
                         }
                     }
                     .padding(24)
@@ -101,8 +105,14 @@ struct ScanView: View {
             if camera.permissionDenied {
                 permissionMessage
             } else if let cameraError = camera.errorMessage {
-                Label(cameraError, systemImage: "exclamationmark.triangle.fill")
-                    .foregroundColor(.red)
+                VStack(spacing: 10) {
+                    Label(cameraError, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundColor(.red)
+                    Button("Retry camera") {
+                        camera.start()
+                    }
+                    .buttonStyle(.bordered)
+                }
             } else {
                 cameraControls
             }
@@ -314,6 +324,7 @@ struct ScanView: View {
                 hasExpiry = false
                 requestSuggestion = false
                 camera.retake()
+                NotificationCenter.default.post(name: .homeHubDataDidChange, object: nil)
             } else {
                 show(error: "The item could not be saved.")
             }

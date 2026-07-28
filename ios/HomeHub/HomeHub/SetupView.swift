@@ -87,6 +87,7 @@ struct SetupView: View {
                 if allowsCancel {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel") {
+                            connectionTask?.cancel()
                             dismiss()
                         }
                     }

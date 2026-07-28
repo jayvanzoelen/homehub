@@ -136,6 +136,19 @@ def test_scan_suggestion_requires_confirmation(
         assert session.exec(select(InventoryItem)).first() is None
 
 
+def test_pantry_confirmation_escapes_item_name(client: TestClient) -> None:
+    with Session(dbmod.engine) as session:
+        session.add(InventoryItem(name="Trader Joe's </script>"))
+        session.commit()
+
+    res = client.get("/pantry")
+
+    assert res.status_code == 200
+    assert b"onsubmit=" not in res.content
+    assert b"data-confirm=" in res.content
+    assert b"Trader Joe&#39;s &lt;/script&gt;" in res.content
+
+
 def test_security_arm_and_motion(client: TestClient) -> None:
     res = client.post("/api/security/arm", data={"armed": "true"})
     assert res.status_code == 200

@@ -11,6 +11,7 @@ struct GuardView: View {
     @State private var pin = ""
     @State private var events: [SecurityEventItem] = []
     @State private var isChangingArmState = false
+    @State private var isDeactivating = false
     @State private var isVisible = false
     @State private var statusText = "Connecting to Home Hub…"
     @State private var isError = false
@@ -60,6 +61,7 @@ struct GuardView: View {
             isVisible = false
             camera.configureDetection(armed: false, threshold: threshold, cooldown: cooldown)
             camera.stop()
+            Task { await deactivateGuard() }
         }
         .onChange(of: scenePhase) { phase in
             if phase == .active && isVisible {
@@ -72,6 +74,7 @@ struct GuardView: View {
             } else {
                 camera.configureDetection(armed: false, threshold: threshold, cooldown: cooldown)
                 camera.stop()
+                Task { await deactivateGuard() }
             }
         }
     }
@@ -108,8 +111,14 @@ struct GuardView: View {
             if camera.permissionDenied {
                 permissionMessage
             } else if let cameraError = camera.errorMessage {
-                Label(cameraError, systemImage: "exclamationmark.triangle.fill")
-                    .foregroundColor(.red)
+                VStack(spacing: 10) {
+                    Label(cameraError, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundColor(.red)
+                    Button("Retry camera") {
+                        camera.start()
+                    }
+                    .buttonStyle(.bordered)
+                }
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -157,7 +166,10 @@ struct GuardView: View {
                 .foregroundColor(isError ? .red : (armed ? .red : .secondary))
                 .multilineTextAlignment(.center)
 
-            Text("Motion detection runs only while Guard is open in the foreground.")
+            Text(
+                "Motion detection runs only while Guard is open in the foreground. "
+                    + "Leaving Guard disarms it automatically."
+            )
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -289,7 +301,9 @@ struct GuardView: View {
         do {
             let response = try await client.setArmed(!armed, pin: pin)
             armed = response.armed
-            pin = ""
+            if !armed {
+                pin = ""
+            }
             camera.configureDetection(
                 armed: armed,
                 threshold: threshold,
@@ -298,6 +312,7 @@ struct GuardView: View {
             isError = false
             statusText = armed ? "Watching for motion" : "Preview only — guard is disarmed"
             await loadEvents()
+            NotificationCenter.default.post(name: .homeHubDataDidChange, object: nil)
         } catch {
             isError = true
             statusText = error.localizedDescription
@@ -314,6 +329,7 @@ struct GuardView: View {
                 isError = false
                 statusText = "Motion snapshot saved"
                 await loadEvents()
+                NotificationCenter.default.post(name: .homeHubDataDidChange, object: nil)
             } else if response.ignored == true {
                 statusText = "Watching for motion"
             }
@@ -331,6 +347,26 @@ struct GuardView: View {
             return "lock.open.fill"
         default:
             return "figure.walk"
+        }
+    }
+
+    @MainActor
+    private func deactivateGuard() async {
+        guard armed, !isDeactivating else { return }
+        isDeactivating = true
+        defer { isDeactivating = false }
+        do {
+            let response = try await client.setArmed(false, pin: pin)
+            armed = response.armed
+            if !armed {
+                pin = ""
+                isError = false
+                statusText = "Guard disarmed because monitoring stopped"
+                NotificationCenter.default.post(name: .homeHubDataDidChange, object: nil)
+            }
+        } catch {
+            isError = true
+            statusText = "Could not disarm Guard: \(error.localizedDescription)"
         }
     }
 }

@@ -1,5 +1,9 @@
 import Foundation
 
+extension Notification.Name {
+    static let homeHubDataDidChange = Notification.Name("HomeHubDataDidChange")
+}
+
 struct HubStatus: Decodable {
     let household: String
     let armed: Bool

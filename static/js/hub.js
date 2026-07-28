@@ -15,4 +15,12 @@
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/static/sw.js").catch(function () {});
   }
+
+  var confirmForms = document.querySelectorAll("form[data-confirm]");
+  for (var i = 0; i < confirmForms.length; i += 1) {
+    confirmForms[i].addEventListener("submit", function (event) {
+      var message = this.getAttribute("data-confirm") || "Continue?";
+      if (!window.confirm(message)) event.preventDefault();
+    });
+  }
 })();

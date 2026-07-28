@@ -17,7 +17,8 @@ because iPad browsers allow camera access only from a trusted HTTPS origin.
    the room.
 
 The app keeps the screen awake while foregrounded. Guard must remain open to
-detect motion; iPadOS suspends camera capture in the background.
+detect motion and disarms when you leave it; iPadOS suspends camera capture in
+the background.
 
 ## PWA alternative
 
